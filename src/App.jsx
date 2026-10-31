@@ -33,6 +33,8 @@ export default function App() {
   const [extractedData, setExtractedData] = useState({});
   const [sessionCode, setSessionCode] = useState(null);
   const [sessionWarning, setSessionWarning] = useState(null);
+  const [ocrEngine, setOcrEngine] = useState(null);
+  const [ocrModel, setOcrModel] = useState(null);
 
   // Check backend health periodically
   useEffect(() => {
@@ -75,12 +77,14 @@ export default function App() {
     setCurrentStep("camera");
   };
 
-  const handleImageCaptured = ({ imageBase64, data, recommendedMode: mode, warning, sessionCode: code }) => {
+  const handleImageCaptured = ({ imageBase64, data, recommendedMode: mode, warning, sessionCode: code, engine, model }) => {
     setCapturedImage(imageBase64);
     setExtractedData(data || {});
     if (mode) setRecommendedMode(mode);
     setSessionWarning(warning);
     setSessionCode(code);
+    setOcrEngine(engine);
+    setOcrModel(model);
     setCurrentStep("review");
   };
 
@@ -162,7 +166,11 @@ export default function App() {
                 }`}
               ></span>
               <span className="hidden sm:inline">
-                {backendHealth.status === "online" ? "API Online" : backendHealth.status === "checking" ? "Checking..." : "API Offline"}
+                {backendHealth.status === "online"
+                  ? (backendHealth.info?.vision === "gemini" ? "API Online (Gemini AI)" : "API Online (Mock Mode)")
+                  : backendHealth.status === "checking"
+                  ? "Checking..."
+                  : "API Offline"}
               </span>
               <span className="text-slate-400 text-xs ml-0.5">⚙️</span>
             </button>
@@ -231,6 +239,8 @@ export default function App() {
             recommendedMode={recommendedMode}
             sessionCode={sessionCode}
             warning={sessionWarning}
+            ocrEngine={ocrEngine}
+            ocrModel={ocrModel}
             onSaved={handleReviewSaved}
             onBack={() => setCurrentStep("camera")}
           />

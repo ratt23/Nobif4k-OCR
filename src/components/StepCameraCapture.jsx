@@ -135,6 +135,8 @@ export default function StepCameraCapture({
           recommendedMode: result.recommendedMode || recommendedMode,
           warning: result.warning,
           sessionCode: result.sessionCode,
+          engine: result.engine,
+          model: result.model,
         });
       }, 500);
     } catch (err) {

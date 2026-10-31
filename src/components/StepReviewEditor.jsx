@@ -15,6 +15,8 @@ export default function StepReviewEditor({
   recommendedMode,
   sessionCode,
   warning,
+  ocrEngine,
+  ocrModel,
   onSaved,
   onBack,
 }) {
@@ -113,6 +115,29 @@ export default function StepReviewEditor({
             ← Foto Ulang
           </button>
         </div>
+
+        {/* Engine Identifier Banner */}
+        {ocrEngine === "gemini" ? (
+          <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-300 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-base">✨</span>
+              <span><strong>Google Gemini 2.5 Flash:</strong> AI Vision membaca data fisik dari foto asli dokumen Anda.</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 whitespace-nowrap">
+              LIVE AI OCR
+            </span>
+          </div>
+        ) : (
+          <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 text-xs text-amber-300 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚠️</span>
+              <span><strong>Mode Demo (Mock):</strong> Data tiruan deterministik. Masukkan <code>GEMINI_API_KEY</code> di file <code>.env</code> server untuk mengaktifkan AI Vision nyata.</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30 whitespace-nowrap">
+              MOCK MODE
+            </span>
+          </div>
+        )}
 
         {warning && (
           <div className="bg-amber-950/40 border border-amber-600/40 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2">
