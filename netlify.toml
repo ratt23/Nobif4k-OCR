@@ -1,3 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  VITE_API_URL = "https://graphicat.site/api/nobif4k"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
