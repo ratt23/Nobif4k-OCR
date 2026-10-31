@@ -2,9 +2,9 @@ import { useState } from "react";
 import { updateSession, ApiError } from "../services/api";
 
 const MODE_LABELS = {
-  TOHODO: "Tohodo (Static HTML Form)",
-  QUICKFORM: "QuickForm (Modern SPA)",
-  LIGHTNING: "Lightning (Iframe / Shadow DOM)",
+  TOHODO: "Tohodo (Google Forms)",
+  QUICKFORM: "QuickForm (Standard Form)",
+  LIGHTNING: "Lightning (React / SPA)",
   DIRECT: "Direct Autofill",
 };
 
@@ -18,7 +18,6 @@ export default function StepReviewEditor({
   onSaved,
   onBack,
 }) {
-  // Convert initialData object to editable array of { id, key, value }
   const [fields, setFields] = useState(() => {
     const entries = Object.entries(initialData);
     if (entries.length === 0) {
@@ -57,7 +56,6 @@ export default function StepReviewEditor({
     setLoading(true);
     setError(null);
 
-    // Build key-value map, filtering out empty keys
     const cleanData = {};
     for (const item of fields) {
       const k = item.key.trim().toLowerCase().replace(/\s+/g, "_");
@@ -67,7 +65,7 @@ export default function StepReviewEditor({
     }
 
     if (Object.keys(cleanData).length === 0) {
-      setError("Please add at least one field with a name.");
+      setError("Tambahkan minimal 1 field data.");
       setLoading(false);
       return;
     }
@@ -86,7 +84,6 @@ export default function StepReviewEditor({
           recommendedMode: result.recommendedMode || mode,
         });
       } else {
-        // Fallback if no sessionCode was generated yet
         onSaved({
           code: "9999",
           data: cleanData,
@@ -95,7 +92,7 @@ export default function StepReviewEditor({
       }
     } catch (err) {
       console.error("Save session error:", err);
-      setError(err instanceof ApiError ? err.message : "Failed to save session.");
+      setError(err instanceof ApiError ? err.message : "Gagal menyimpan revisi sesi.");
     } finally {
       setLoading(false);
     }
@@ -103,39 +100,45 @@ export default function StepReviewEditor({
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Step 3: Review & Edit Data</h2>
+      <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-6 border border-slate-700/70 shadow-xl space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
+            <h2 className="text-xl font-bold tracking-tight text-white">Review & Koreksi Data</h2>
+          </div>
           <button
             onClick={onBack}
-            className="text-sm text-slate-400 hover:text-slate-200 transition"
+            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition"
           >
-            ← Retake Photo
+            ← Foto Ulang
           </button>
         </div>
 
         {warning && (
-          <div className="mb-4 bg-amber-900/30 border border-amber-600 rounded p-3 text-xs text-amber-200">
-            ⚠️ {warning}
+          <div className="bg-amber-950/40 border border-amber-600/40 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2">
+            <span>⚠️</span>
+            <div>{warning}</div>
           </div>
         )}
 
-        {/* Thumbnail Preview with Click-to-Zoom */}
+        {/* Thumbnail Preview */}
         {capturedImage && (
-          <div className="mb-6">
+          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-400 font-medium">Captured Document:</span>
+              <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                <span>📷</span> Foto Dokumen KTP:
+              </span>
               <button
                 type="button"
                 onClick={() => setImageExpanded(!imageExpanded)}
-                className="text-xs text-blue-400 hover:text-blue-300 underline"
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
               >
-                {imageExpanded ? "Collapse Photo" : "View Full Photo"}
+                {imageExpanded ? "Kecilkan Foto ▲" : "Lihat Foto Lengkap ▼"}
               </button>
             </div>
             <div
-              className={`relative overflow-hidden rounded border border-slate-700 bg-black/40 transition-all ${
-                imageExpanded ? "max-h-[500px]" : "max-h-36"
+              className={`relative overflow-hidden rounded-lg border border-slate-700 bg-black/60 transition-all duration-300 ${
+                imageExpanded ? "max-h-[500px]" : "max-h-28"
               }`}
             >
               <img
@@ -148,15 +151,15 @@ export default function StepReviewEditor({
           </div>
         )}
 
-        {/* Mode Selector */}
-        <div className="mb-6 p-3 bg-slate-900 rounded border border-slate-700">
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-            Target Autofill Mode
+        {/* Autofill Mode Selector */}
+        <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-700 space-y-1.5">
+          <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            Mode Autofill Target
           </label>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="DIRECT">{MODE_LABELS.DIRECT}</option>
             <option value="TOHODO">{MODE_LABELS.TOHODO}</option>
@@ -165,46 +168,46 @@ export default function StepReviewEditor({
           </select>
         </div>
 
-        {/* Editable Fields List */}
-        <div className="space-y-3 mb-6">
+        {/* Extracted Fields Table */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Extracted Fields ({fields.length})
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Field Terdeteksi ({fields.length})
             </span>
             <button
               type="button"
               onClick={handleAddField}
-              className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 bg-cyan-950/40 px-2.5 py-1 rounded-lg border border-cyan-800/40"
             >
-              + Add Field
+              + Tambah Field
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {fields.map((field) => (
               <div
                 key={field.id}
-                className="flex items-center gap-2 p-2 bg-slate-900 rounded border border-slate-700/60"
+                className="flex items-center gap-2 p-2 bg-slate-900/90 rounded-xl border border-slate-700/60 hover:border-slate-600 transition"
               >
                 <input
                   type="text"
-                  placeholder="field_name"
+                  placeholder="nama_field"
                   value={field.key}
                   onChange={(e) => handleFieldChange(field.id, "key", e.target.value)}
-                  className="w-1/3 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-xs font-mono text-blue-300 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-1/3 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs font-mono text-cyan-300 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
                 <input
                   type="text"
-                  placeholder="Field value..."
+                  placeholder="Nilai data..."
                   value={field.value}
                   onChange={(e) => handleFieldChange(field.id, "value", e.target.value)}
-                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans"
                 />
                 <button
                   type="button"
                   onClick={() => handleDeleteField(field.id)}
-                  title="Delete field"
-                  className="text-slate-500 hover:text-red-400 px-2 py-1 text-base transition"
+                  title="Hapus field"
+                  className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-500 flex items-center justify-center text-sm transition border border-slate-700/60"
                 >
                   ✕
                 </button>
@@ -214,33 +217,33 @@ export default function StepReviewEditor({
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-900/30 border border-red-700 rounded p-3 text-sm text-red-300">
+          <div className="bg-red-950/40 border border-red-500/40 rounded-xl p-3 text-xs text-red-200">
             {error}
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-2.5 pt-2 border-t border-slate-700/60">
           <button
             type="button"
             onClick={handleAddField}
             disabled={loading}
-            className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium py-3 px-4 rounded transition"
+            className="py-3 px-4 bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-600"
           >
-            + Add Field
+            + Tambah
           </button>
           <button
             type="button"
             onClick={handleSave}
             disabled={loading}
-            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 font-semibold py-3 px-6 rounded transition flex items-center justify-center gap-2 text-white shadow-lg shadow-green-600/20"
+            className="flex-1 py-3 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 text-white"
           >
             {loading ? (
               <>
-                <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
-                <span>Saving & Syncing...</span>
+                <div className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full"></div>
+                Menyimpan...
               </>
             ) : (
-              <span>Save & Generate Sync Code 🚀</span>
+              <span>Simpan & Buat Kode Sync (4 Digit) 🚀</span>
             )}
           </button>
         </div>
@@ -248,4 +251,3 @@ export default function StepReviewEditor({
     </div>
   );
 }
-
