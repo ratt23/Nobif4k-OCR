@@ -2,10 +2,10 @@ import { useState } from "react";
 import { inspectUrl, ApiError } from "../services/api";
 
 const MODES_INFO = [
-  { mode: "TOHODO", label: "Google Forms", color: "from-blue-500 to-indigo-600", dot: "bg-blue-400" },
-  { mode: "QUICKFORM", label: "Standard HTML Form", color: "from-purple-500 to-pink-600", dot: "bg-purple-400" },
-  { mode: "LIGHTNING", label: "React / Modern SPA", color: "from-amber-500 to-orange-600", dot: "bg-amber-400" },
-  { mode: "DIRECT", label: "Direct Universal Inject", color: "from-emerald-500 to-teal-600", dot: "bg-emerald-400" },
+  { mode: "DIRECT", label: "Autofill Langsung Universal", desc: "Isi otomatis form apa pun atau salin teks" },
+  { mode: "TOHODO", label: "Google Forms", desc: "Optimasi khusus field Google Form" },
+  { mode: "QUICKFORM", label: "Standard HTML Form", desc: "Formulir standar web & intranet" },
+  { mode: "LIGHTNING", label: "React / Modern SPA", desc: "Aplikasi Single Page modern (SIMRS, dll)" },
 ];
 
 export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
@@ -30,7 +30,7 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
         warning: result.warning,
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal memeriksa form target URL.");
+      setError(err instanceof ApiError ? err.message : "Gagal memeriksa formulir target URL.");
       console.error("Inspect error:", err);
     } finally {
       setLoading(false);
@@ -38,32 +38,39 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-6 border border-slate-700/70 shadow-xl space-y-5">
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-          <h2 className="text-xl font-bold tracking-tight text-white">Inspeksi Form Target</h2>
+    <div className="space-y-5">
+      <div className="winui-card rounded-xl p-6 space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-semibold flex items-center justify-center">
+              1
+            </span>
+            <h2 className="text-base font-semibold text-slate-900">Target Formulir</h2>
+          </div>
+          <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+            Langkah Opsional
+          </span>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Masukkan URL formulir web tujuan (misal: formulir pendaftaran, SIMRS, Google Forms, atau sistem rumah sakit) untuk mendeteksi field input dan menentukan mode autofill paling presisi.
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Masukkan URL formulir web yang ingin Anda isi secara otomatis (misal: formulir Google Form, SIMRS rumah sakit, pendaftaran online, atau sistem internal). Sistem akan menganalisis field input agar pemindaian OCR lebih presisi.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <input
               type="url"
-              placeholder="https://docs.google.com/forms/d/e/... atau https://..."
+              placeholder="https://docs.google.com/forms/... atau https://sistem-anda/form"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-inner font-mono"
+              className="w-full winui-input rounded-lg px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 font-mono"
               disabled={loading}
             />
             {url && (
               <button
                 type="button"
                 onClick={() => setUrl("")}
-                className="absolute right-3 top-3 text-slate-400 hover:text-white text-xs px-1.5 py-0.5"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs px-1"
               >
                 ✕
               </button>
@@ -71,7 +78,7 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
           </div>
 
           {error && (
-            <div className="bg-red-950/40 border border-red-500/40 rounded-xl p-3.5 text-xs text-red-200 flex items-start gap-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 flex items-start gap-2">
               <span className="text-sm">⚠️</span>
               <div className="flex-1">{error}</div>
             </div>
@@ -81,7 +88,7 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
             <button
               type="submit"
               disabled={loading || !url.trim()}
-              className="flex-1 py-3 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition shadow-xs flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -90,8 +97,10 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  Analisis Struktur Form
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Periksa Field Form
                 </>
               )}
             </button>
@@ -100,25 +109,25 @@ export default function StepUrlInspector({ baseUrl, onInspected, onSkip }) {
               type="button"
               onClick={onSkip}
               disabled={loading}
-              className="py-3 px-5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-600 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              className="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition border border-slate-300 shadow-xs flex items-center justify-center gap-1.5"
             >
-              Lewati (Mode Langsung) ➔
+              Lewati & Pindai Dokumen Langsung ➔
             </button>
           </div>
         </form>
 
-        {/* Mode Information Cards */}
-        <div className="pt-4 border-t border-slate-700/60">
-          <span className="text-[11px] font-semibold text-slate-400 block mb-2.5">
-            Mendukung Otomasi Multi-Mode:
+        {/* WinUI 3 Feature Badges */}
+        <div className="pt-4 border-t border-slate-100">
+          <span className="text-[11px] font-medium text-slate-500 block mb-2">
+            Mendukung berbagai jenis formulir & dokumen:
           </span>
-          <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             {MODES_INFO.map((item) => (
-              <div key={item.mode} className="p-2 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${item.dot}`}></span>
+              <div key={item.mode} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-start gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-600 mt-1 shrink-0"></span>
                 <div>
-                  <span className="font-bold text-slate-200">{item.mode}</span>
-                  <span className="text-[10px] text-slate-400 block">{item.label}</span>
+                  <span className="font-semibold text-slate-800">{item.label}</span>
+                  <p className="text-[11px] text-slate-500">{item.desc}</p>
                 </div>
               </div>
             ))}

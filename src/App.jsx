@@ -6,10 +6,10 @@ import StepSessionSync from "./components/StepSessionSync";
 import { getDefaultBaseUrl, checkHealth, PRODUCTION_API } from "./services/api";
 
 const STEPS = [
-  { id: "url", stepNumber: 1, label: "Form Target" },
-  { id: "camera", stepNumber: 2, label: "Scan OCR" },
-  { id: "review", stepNumber: 3, label: "Review Data" },
-  { id: "sync", stepNumber: 4, label: "Sync Code" },
+  { id: "url", stepNumber: 1, label: "Target Formulir" },
+  { id: "camera", stepNumber: 2, label: "Pindai Dokumen" },
+  { id: "review", stepNumber: 3, label: "Tinjau & Autofill" },
+  { id: "sync", stepNumber: 4, label: "Kode Sinkronisasi" },
 ];
 
 export default function App() {
@@ -124,84 +124,93 @@ export default function App() {
   const currentStepIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-white">
-      {/* Sticky Header with Glow */}
-      <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-xl">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
-              📄
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased">
+      {/* WinUI 3 Navigation & Title Header */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
             <div>
-              <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-                Nobif4k <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-cyan-300 border border-blue-500/30">OCR Suite</span>
+              <h1 className="text-sm font-semibold tracking-tight text-slate-900 flex items-center gap-2">
+                Nobif4k Scanner
+                <span className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  Autofill Utility
+                </span>
               </h1>
-              <p className="text-[10px] text-slate-400">Mobile OCR to Desktop Autofill Bridge</p>
+              <p className="text-[11px] text-slate-500">Pemindai Dokumen & Pengisi Formulir Otomatis</p>
             </div>
           </div>
 
-          {/* Right Status Pill & Config Button */}
+          {/* Right WinUI InfoBar Pill & Config */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setTempApiUrl(baseUrl);
                 setIsApiModalOpen(true);
               }}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors shadow-xs ${
                 backendHealth.status === "online"
-                  ? "bg-emerald-950/40 text-emerald-300 border-emerald-500/30 hover:border-emerald-500/60"
+                  ? "bg-white text-emerald-700 border-slate-200 hover:bg-slate-50"
                   : backendHealth.status === "checking"
-                  ? "bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600"
-                  : "bg-red-950/40 text-red-300 border-red-500/40 hover:border-red-500 animate-pulse"
+                  ? "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
               }`}
-              title="Klik untuk konfigurasi API backend"
+              title="Konfigurasi Server API"
             >
               <span
                 className={`w-2 h-2 rounded-full ${
                   backendHealth.status === "online"
-                    ? "bg-emerald-400 animate-pulse"
+                    ? "bg-emerald-500"
                     : backendHealth.status === "checking"
                     ? "bg-amber-400"
-                    : "bg-red-400"
+                    : "bg-red-500"
                 }`}
               ></span>
               <span className="hidden sm:inline">
-                {backendHealth.status === "online"
-                  ? (backendHealth.info?.vision === "gemini" ? "API Online (Gemini AI)" : "API Online (Mock Mode)")
-                  : backendHealth.status === "checking"
-                  ? "Checking..."
-                  : "API Offline"}
+                {backendHealth.status === "online" ? "Server Siap" : backendHealth.status === "checking" ? "Memeriksa..." : "Offline"}
               </span>
-              <span className="text-slate-400 text-xs ml-0.5">⚙️</span>
+              <svg className="w-3.5 h-3.5 text-slate-400 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             </button>
           </div>
         </div>
 
-        {/* Dynamic 4-Step Interactive Navigation Progress */}
-        <div className="max-w-3xl mx-auto px-4 pb-3">
-          <div className="grid grid-cols-4 gap-1.5 pt-1">
+        {/* WinUI 3 Segmented Breadcrumb Stepper */}
+        <div className="max-w-4xl mx-auto px-4 pb-3">
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs overflow-x-auto">
             {STEPS.map((s, idx) => {
               const isActive = idx === currentStepIndex;
               const isPassed = idx < currentStepIndex;
 
               return (
-                <div key={s.id} className="flex flex-col items-center text-center">
-                  <div
-                    className={`w-full h-1.5 rounded-full transition-all duration-300 ${
-                      isActive
-                        ? "bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
-                        : isPassed
-                        ? "bg-blue-600"
-                        : "bg-slate-800"
-                    }`}
-                  ></div>
+                <div
+                  key={s.id}
+                  className={`flex-1 min-w-[90px] py-1.5 px-2 rounded-md text-center transition-all flex items-center justify-center gap-1.5 ${
+                    isActive
+                      ? "bg-white text-blue-700 font-semibold shadow-xs border border-slate-200/80"
+                      : isPassed
+                      ? "text-blue-600 bg-blue-50/60 font-medium"
+                      : "text-slate-500"
+                  }`}
+                >
                   <span
-                    className={`text-[10px] mt-1.5 truncate font-medium transition-colors ${
-                      isActive ? "text-cyan-400 font-bold" : isPassed ? "text-slate-300" : "text-slate-600"
+                    className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : isPassed
+                        ? "bg-blue-200 text-blue-800"
+                        : "bg-slate-200 text-slate-600"
                     }`}
                   >
-                    {s.stepNumber}. {s.label}
+                    {isPassed ? "✓" : s.stepNumber}
                   </span>
+                  <span className="truncate">{s.label}</span>
                 </div>
               );
             })}
@@ -209,8 +218,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+      {/* Main Container */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
         {currentStep === "url" && (
           <StepUrlInspector
             baseUrl={baseUrl}
@@ -234,6 +243,7 @@ export default function App() {
         {currentStep === "review" && (
           <StepReviewEditor
             baseUrl={baseUrl}
+            targetUrl={targetUrl}
             capturedImage={capturedImage}
             initialData={extractedData}
             recommendedMode={recommendedMode}
@@ -250,28 +260,36 @@ export default function App() {
           <StepSessionSync
             sessionCode={sessionCode}
             data={extractedData}
+            targetUrl={targetUrl}
             recommendedMode={recommendedMode}
             onReset={handleReset}
           />
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600">
-        <p>Nobif4k Autofill Bridge • Form-First Document Intelligence</p>
+      {/* Clean Minimal Footer */}
+      <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
+        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>Nobif4k Autofill Bridge • Pemindai Dokumen Windows UI</span>
+          <span className="text-[11px] text-slate-400">Penyimpanan Sementara Aman (Zero Disk Storage)</span>
+        </div>
       </footer>
 
-      {/* Modern API Settings Modal */}
+      {/* WinUI Style Dialog: API Settings */}
       {isApiModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>⚙️</span> Pengaturan API Backend
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Pengaturan Endpoint Server API
               </h3>
               <button
                 onClick={() => setIsApiModalOpen(false)}
-                className="text-slate-400 hover:text-white text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-semibold p-1"
               >
                 ✕
               </button>
@@ -279,58 +297,54 @@ export default function App() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-300 font-semibold block mb-1">
-                  URL Endpoint Nobif4k Backend:
+                <label className="text-slate-700 font-medium block mb-1">
+                  URL Endpoint Backend:
                 </label>
                 <input
                   type="text"
                   value={tempApiUrl}
                   onChange={(e) => setTempApiUrl(e.target.value)}
                   placeholder="https://graphicat.site/api/nobif4k"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full winui-input rounded-lg px-3 py-2 text-xs font-mono"
                 />
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-500 block mb-1">Pilihan Cepat (Preset):</span>
+                <span className="text-slate-500 block mb-1.5 font-medium">Pilihan Server:</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setTempApiUrl(PRODUCTION_API)}
-                    className="p-2 text-left rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition"
+                    className="p-2.5 text-left rounded-lg bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 transition"
                   >
-                    <div className="font-semibold text-emerald-400">Production</div>
-                    <div className="text-[10px] text-slate-400 truncate">graphicat.site/api/nobif4k</div>
+                    <div className="font-semibold text-blue-700 text-xs">Production (Aktif)</div>
+                    <div className="text-[10px] text-slate-500 truncate">graphicat.site/api/nobif4k</div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setTempApiUrl("http://localhost:3001/api/nobif4k")}
-                    className="p-2 text-left rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition"
+                    className="p-2.5 text-left rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition"
                   >
-                    <div className="font-semibold text-blue-400">Local Dev</div>
-                    <div className="text-[10px] text-slate-400 truncate">localhost:3001</div>
+                    <div className="font-semibold text-slate-700 text-xs">Localhost Dev</div>
+                    <div className="text-[10px] text-slate-500 truncate">localhost:3001</div>
                   </button>
                 </div>
               </div>
-
-              <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-                💡 <strong className="text-slate-300">Catatan:</strong> Jika Anda mengakses aplikasi dari HP/smartphone, jangan gunakan <code className="text-amber-400">localhost</code> karena HP tidak bisa menjangkau localhost laptop tanpa tunnel IP. Gunakan server <strong className="text-emerald-400">Production</strong>.
-              </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
+            <div className="flex gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={handleResetToProduction}
-                className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition"
+                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition"
               >
                 Reset Default
               </button>
               <button
                 type="button"
                 onClick={() => handleSaveApiUrl(tempApiUrl)}
-                className="flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-blue-900/30"
+                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-xs transition"
               >
                 Simpan & Terapkan
               </button>

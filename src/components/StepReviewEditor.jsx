@@ -2,14 +2,15 @@ import { useState } from "react";
 import { updateSession, ApiError } from "../services/api";
 
 const MODE_LABELS = {
-  TOHODO: "Tohodo (Google Forms)",
-  QUICKFORM: "QuickForm (Standard Form)",
-  LIGHTNING: "Lightning (React / SPA)",
-  DIRECT: "Direct Autofill",
+  DIRECT: "Universal Direct Autofill",
+  TOHODO: "Google Forms",
+  QUICKFORM: "Standard HTML Form",
+  LIGHTNING: "React / Modern SPA",
 };
 
 export default function StepReviewEditor({
   baseUrl,
+  targetUrl,
   capturedImage,
   initialData = {},
   recommendedMode,
@@ -20,12 +21,23 @@ export default function StepReviewEditor({
   onSaved,
   onBack,
 }) {
+  // Detect if there are document paragraphs
+  const paragraphKey = Object.keys(initialData).find((k) =>
+    ["paragraf_lengkap", "teks_lengkap", "isi_paragraf", "paragraf", "isi_dokumen"].includes(k.toLowerCase())
+  );
+
+  const [paragraphText, setParagraphText] = useState(
+    paragraphKey && initialData[paragraphKey] ? String(initialData[paragraphKey]) : ""
+  );
+
   const [fields, setFields] = useState(() => {
     const entries = Object.entries(initialData);
     if (entries.length === 0) {
       return [{ id: "1", key: "nama", value: "" }];
     }
-    return entries.map(([k, v], idx) => ({
+    // Filter out the primary whole-paragraph text from the key-value list if it's shown in the dedicated box
+    const filtered = paragraphKey ? entries.filter(([k]) => k !== paragraphKey) : entries;
+    return filtered.map(([k, v], idx) => ({
       id: `${idx}-${Date.now()}`,
       key: k,
       value: typeof v === "object" ? JSON.stringify(v) : String(v ?? ""),
@@ -35,6 +47,8 @@ export default function StepReviewEditor({
   const [mode, setMode] = useState(recommendedMode || "DIRECT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState(null);
+  const [directAutofillSuccess, setDirectAutofillSuccess] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
 
   const handleFieldChange = (id, fieldName, newVal) => {
@@ -50,27 +64,81 @@ export default function StepReviewEditor({
     ]);
   };
 
-  const handleDeleteField = (id) => {
+  const handleRemoveField = (id) => {
     setFields((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleSave = async () => {
+  const getCleanData = () => {
+    const cleanData = {};
+    if (paragraphKey && paragraphText.trim()) {
+      cleanData[paragraphKey] = paragraphText.trim();
+    }
+    for (const f of fields) {
+      const k = f.key.trim();
+      if (k) cleanData[k] = f.value;
+    }
+    return cleanData;
+  };
+
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(label);
+      setTimeout(() => setCopyFeedback(null), 2500);
+    } catch (_) {}
+  };
+
+  const handleCopyAll = () => {
+    const clean = getCleanData();
+    const formatted = Object.entries(clean)
+      .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+      .join("\n");
+    copyToClipboard(formatted, "Semua data berhasil disalin ke clipboard!");
+  };
+
+  const handleCopyParagraph = () => {
+    if (!paragraphText) return;
+    copyToClipboard(paragraphText, "Seluruh paragraf dokumen berhasil disalin!");
+  };
+
+  // Direct Frontend Autofill Trigger
+  const handleDirectAutofill = async () => {
+    const cleanData = getCleanData();
+
+    // 1. Broadcast to any open tab / Chrome extension listening via window messaging
+    try {
+      window.postMessage(
+        {
+          type: "NOBIF4K_DIRECT_AUTOFILL",
+          source: "nobif4k-web",
+          mode,
+          data: cleanData,
+        },
+        "*"
+      );
+    } catch (_) {}
+
+    // 2. If targetUrl is set, open it and prepare autofill
+    if (targetUrl) {
+      // Store in localStorage for target tab
+      localStorage.setItem("nobif4k_direct_payload", JSON.stringify(cleanData));
+      window.open(targetUrl, "_blank");
+    }
+
+    // 3. Also copy JSON to clipboard as instant universal fallback
+    await copyToClipboard(
+      JSON.stringify(cleanData, null, 2),
+      "Data formulir siap! Disalin ke clipboard untuk autofill instan."
+    );
+
+    setDirectAutofillSuccess(true);
+    setTimeout(() => setDirectAutofillSuccess(false), 4000);
+  };
+
+  const handleProceedToSync = async () => {
     setLoading(true);
     setError(null);
-
-    const cleanData = {};
-    for (const item of fields) {
-      const k = item.key.trim().toLowerCase().replace(/\s+/g, "_");
-      if (k) {
-        cleanData[k] = item.value;
-      }
-    }
-
-    if (Object.keys(cleanData).length === 0) {
-      setError("Tambahkan minimal 1 field data.");
-      setLoading(false);
-      return;
-    }
+    const cleanData = getCleanData();
 
     try {
       if (sessionCode) {
@@ -101,177 +169,246 @@ export default function StepReviewEditor({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-6 border border-slate-700/70 shadow-xl space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-            <h2 className="text-xl font-bold tracking-tight text-white">Review & Koreksi Data</h2>
+    <div className="space-y-5">
+      <div className="winui-card rounded-xl p-6 space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-semibold flex items-center justify-center">
+              3
+            </span>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Tinjau Data & Direct Autofill</h2>
+              <p className="text-xs text-slate-500">
+                Periksa data hasil pemindaian. Anda dapat langsung melakukan autofill atau menyalin teks di sini.
+              </p>
+            </div>
           </div>
           <button
             onClick={onBack}
-            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition"
+            className="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition font-medium"
           >
             ← Foto Ulang
           </button>
         </div>
 
-        {/* Engine Identifier Banner */}
-        {ocrEngine === "gemini" ? (
-          <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-300 flex items-center justify-between gap-2 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-base">✨</span>
-              <span><strong>Google Gemini AI Vision ({ocrModel || "flash"}):</strong> AI Vision berhasil membaca data fisik dari foto asli dokumen Anda.</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 whitespace-nowrap">
-              LIVE AI OCR
-            </span>
-          </div>
-        ) : (
-          <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 text-xs text-amber-300 flex items-center justify-between gap-2 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-base">⚠️</span>
-              <span><strong>Mode Demo (Mock):</strong> Data tiruan deterministik. Masukkan <code>GEMINI_API_KEY</code> di file <code>.env</code> server untuk mengaktifkan AI Vision nyata.</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30 whitespace-nowrap">
-              MOCK MODE
-            </span>
+        {/* Copy Feedback Alert Bar */}
+        {copyFeedback && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-xs text-emerald-800 flex items-center gap-2 transition animate-fade-in">
+            <span>✓</span>
+            <span className="font-medium">{copyFeedback}</span>
           </div>
         )}
 
-        {warning && (
-          <div className="bg-amber-950/40 border border-amber-600/40 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2">
-            <span>⚠️</span>
-            <div>{warning}</div>
+        {/* Direct Autofill Alert */}
+        {directAutofillSuccess && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+            <div className="font-semibold flex items-center gap-1.5">
+              <span>⚡</span> Direct Autofill Berjalan!
+            </div>
+            <p className="text-[11px] text-blue-700 leading-relaxed">
+              Data terformat telah disalin ke clipboard dan disiarkan ke formulir. Jika formulir Anda berada di tab lain, tekan <strong>Ctrl + V</strong> atau klik ikon Ekstensi Chrome untuk pengisian otomatis 1-detik.
+            </p>
           </div>
         )}
 
-        {/* Thumbnail Preview */}
+        {/* Thumbnail Preview (Collapsible) */}
         {capturedImage && (
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
-                <span>📷</span> Foto Dokumen KTP:
+              <span className="text-xs text-slate-700 font-medium flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Foto Dokumen yang Dipindai
               </span>
               <button
                 type="button"
                 onClick={() => setImageExpanded(!imageExpanded)}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
               >
-                {imageExpanded ? "Kecilkan Foto ▲" : "Lihat Foto Lengkap ▼"}
+                {imageExpanded ? "Kecilkan Foto ▲" : "Perbesar Foto ▼"}
               </button>
             </div>
             <div
-              className={`relative overflow-hidden rounded-lg border border-slate-700 bg-black/60 transition-all duration-300 ${
-                imageExpanded ? "max-h-[500px]" : "max-h-28"
+              className={`overflow-hidden rounded border border-slate-200 bg-slate-100 transition-all duration-200 ${
+                imageExpanded ? "max-h-[480px]" : "max-h-24"
               }`}
             >
               <img
                 src={capturedImage}
-                alt="Captured document"
-                className="w-full object-contain cursor-pointer"
-                onClick={() => setImageExpanded(!imageExpanded)}
+                alt="Document Preview"
+                className="w-full object-contain mx-auto"
               />
             </div>
           </div>
         )}
 
-        {/* Autofill Mode Selector */}
-        <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-700 space-y-1.5">
-          <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            Mode Autofill Target
-          </label>
-          <select
-            value={mode}
-            onChange={(e) => setMode(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="DIRECT">{MODE_LABELS.DIRECT}</option>
-            <option value="TOHODO">{MODE_LABELS.TOHODO}</option>
-            <option value="QUICKFORM">{MODE_LABELS.QUICKFORM}</option>
-            <option value="LIGHTNING">{MODE_LABELS.LIGHTNING}</option>
-          </select>
-        </div>
+        {/* WHOLE PARAGRAPH DETECTED: DEDICATED WINUI PARAGRAPH BOX */}
+        {paragraphKey && (
+          <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📄</span>
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-900">
+                    Isi Paragraf Dokumen Lengkap (Whole Paragraph)
+                  </h3>
+                  <span className="text-[11px] text-slate-500">
+                    Terdeteksi dokumen teks/surat. Teks paragraf dipindai secara utuh.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyParagraph}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-100 border border-slate-300 text-xs font-medium text-slate-700 shadow-xs transition"
+              >
+                <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                Salin Seluruh Paragraf
+              </button>
+            </div>
 
-        {/* Extracted Fields Table */}
+            <textarea
+              rows={6}
+              value={paragraphText}
+              onChange={(e) => setParagraphText(e.target.value)}
+              className="w-full winui-input rounded-lg p-3 text-xs leading-relaxed font-sans text-slate-800"
+              placeholder="Teks paragraf dokumen akan tampil di sini..."
+            />
+
+            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span>
+                Jumlah kata: <strong>{paragraphText.trim() ? paragraphText.trim().split(/\s+/).length : 0}</strong> kata
+              </span>
+              <span>
+                Karakter: <strong>{paragraphText.length}</strong>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Structured Field Items */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Field Terdeteksi ({fields.length})
-            </span>
+            <h3 className="text-xs font-semibold text-slate-900">
+              Field Data Terstruktur ({fields.length} Field)
+            </h3>
             <button
               type="button"
               onClick={handleAddField}
-              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 bg-cyan-950/40 px-2.5 py-1 rounded-lg border border-cyan-800/40"
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
             >
-              + Tambah Field
+              + Tambah Field Manual
             </button>
           </div>
 
-          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-            {fields.map((field) => (
-              <div
-                key={field.id}
-                className="flex items-center gap-2 p-2 bg-slate-900/90 rounded-xl border border-slate-700/60 hover:border-slate-600 transition"
-              >
-                <input
-                  type="text"
-                  placeholder="nama_field"
-                  value={field.key}
-                  onChange={(e) => handleFieldChange(field.id, "key", e.target.value)}
-                  className="w-1/3 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs font-mono text-cyan-300 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Nilai data..."
-                  value={field.value}
-                  onChange={(e) => handleFieldChange(field.id, "value", e.target.value)}
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleDeleteField(field.id)}
-                  title="Hapus field"
-                  className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-500 flex items-center justify-center text-sm transition border border-slate-700/60"
+          <div className="space-y-2">
+            {fields.map((f) => {
+              const isMultiline = f.value.includes("\n") || f.value.length > 70;
+
+              return (
+                <div
+                  key={f.id}
+                  className="p-2.5 rounded-lg bg-slate-50/70 border border-slate-200/80 space-y-1.5"
                 >
-                  ✕
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="text"
+                      value={f.key}
+                      onChange={(e) => handleFieldChange(f.id, "key", e.target.value)}
+                      placeholder="Nama Field (misal: nama, nik)"
+                      className="winui-input rounded px-2 py-1 text-xs font-semibold text-slate-800 w-44 bg-white"
+                    />
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(f.value, `Disalin: ${f.key}`)}
+                        className="px-2 py-1 text-[11px] rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 font-medium"
+                        title="Salin nilai field ini"
+                      >
+                        Salin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField(f.id)}
+                        className="p-1 text-slate-400 hover:text-red-600 text-xs rounded"
+                        title="Hapus field ini"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {isMultiline ? (
+                    <textarea
+                      rows={3}
+                      value={f.value}
+                      onChange={(e) => handleFieldChange(f.id, "value", e.target.value)}
+                      className="w-full winui-input rounded px-2.5 py-1.5 text-xs text-slate-800 bg-white"
+                      placeholder="Isi teks field..."
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={f.value}
+                      onChange={(e) => handleFieldChange(f.id, "value", e.target.value)}
+                      className="w-full winui-input rounded px-2.5 py-1.5 text-xs text-slate-800 bg-white"
+                      placeholder="Nilai field..."
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Direct Action Commands (Front End Direct Autofill) */}
+        <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            {/* Primary Direct Autofill Button */}
+            <button
+              type="button"
+              onClick={handleDirectAutofill}
+              className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Direct Autofill ke Formulir
+            </button>
+
+            {/* Copy All Data Button */}
+            <button
+              type="button"
+              onClick={handleCopyAll}
+              className="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium shadow-xs transition flex items-center justify-center gap-1.5"
+            >
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Salin Semua Data
+            </button>
+
+            {/* Advance to Step 4 Sync Code */}
+            <button
+              type="button"
+              onClick={handleProceedToSync}
+              disabled={loading}
+              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1"
+            >
+              {loading ? "Menyimpan..." : "Kode Ekstensi (Langkah 4) ➔"}
+            </button>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-950/40 border border-red-500/40 rounded-xl p-3 text-xs text-red-200">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
             {error}
           </div>
         )}
-
-        <div className="flex gap-2.5 pt-2 border-t border-slate-700/60">
-          <button
-            type="button"
-            onClick={handleAddField}
-            disabled={loading}
-            className="py-3 px-4 bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-600"
-          >
-            + Tambah
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={loading}
-            className="flex-1 py-3 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 text-white"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full"></div>
-                Menyimpan...
-              </>
-            ) : (
-              <span>Simpan & Buat Kode Sync (4 Digit) 🚀</span>
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );

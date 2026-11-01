@@ -1,15 +1,9 @@
 import { useState, useEffect } from "react";
 
-const MODE_COLORS = {
-  TOHODO: "bg-blue-600 border-blue-500",
-  QUICKFORM: "bg-purple-600 border-purple-500",
-  LIGHTNING: "bg-amber-600 border-amber-500",
-  DIRECT: "bg-emerald-600 border-emerald-500",
-};
-
 export default function StepSessionSync({
   sessionCode,
   data = {},
+  targetUrl,
   recommendedMode = "DIRECT",
   onReset,
 }) {
@@ -37,9 +31,7 @@ export default function StepSessionSync({
       await navigator.clipboard.writeText(String(sessionCode));
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2200);
-    } catch (err) {
-      console.error("Clipboard copy error:", err);
-    }
+    } catch (_) {}
   };
 
   const handleCopyJson = async () => {
@@ -47,81 +39,77 @@ export default function StepSessionSync({
       await navigator.clipboard.writeText(jsonString);
       setCopiedJson(true);
       setTimeout(() => setCopiedJson(false), 2200);
-    } catch (err) {
-      console.error("Clipboard copy error:", err);
-    }
+    } catch (_) {}
   };
 
-  const modeBadgeColor = MODE_COLORS[recommendedMode] || MODE_COLORS.DIRECT;
-
   return (
-    <div className="space-y-6">
-      <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-700/70 text-center shadow-2xl space-y-5">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border bg-slate-900 border-slate-700 text-slate-300">
-          <span>Mode:</span>
-          <span className={`px-2 py-0.5 rounded text-white text-xs ${modeBadgeColor}`}>
-            {recommendedMode}
-          </span>
-        </div>
-
+    <div className="space-y-5">
+      <div className="winui-card rounded-xl p-6 sm:p-8 text-center space-y-5">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Sync Code Berhasil Dibuat!</h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Buka ekstensi Nobif4k di Chrome Desktop Anda, lalu masukkan 4 digit kode berikut:
+          <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full mb-2">
+            Mode: {recommendedMode}
+          </span>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            Kode Sinkronisasi Siap
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Gunakan kode 4 digit ini pada Ekstensi Chrome desktop Anda untuk mengisi formulir target secara instan.
           </p>
         </div>
 
-        {/* Giant Monospace Session Code with Cyan Glow */}
+        {/* WinUI Clean Code Box */}
         <div
           onClick={handleCopyCode}
           title="Klik untuk menyalin kode"
-          className="group relative cursor-pointer inline-flex flex-col items-center justify-center bg-slate-950 border-2 border-cyan-500/80 hover:border-cyan-400 rounded-3xl px-12 py-7 shadow-[0_0_30px_rgba(6,182,212,0.25)] transition-all transform hover:scale-[1.02] active:scale-95"
+          className="cursor-pointer inline-flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 border-2 border-blue-600 rounded-xl px-10 py-6 transition shadow-xs active:scale-98"
         >
-          <span className="font-mono text-6xl sm:text-7xl font-extrabold tracking-widest text-cyan-400 select-all">
+          <span className="font-mono text-5xl sm:text-6xl font-bold tracking-widest text-blue-700 select-all">
             {sessionCode || "----"}
           </span>
-          <span className="text-xs text-slate-400 mt-2 font-mono group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+          <span className="text-xs text-slate-600 mt-2 font-medium flex items-center gap-1.5">
             {copiedCode ? (
-              <span className="text-emerald-400 font-bold">✓ Tersalin ke Clipboard!</span>
+              <span className="text-emerald-700 font-semibold">✓ Kode Tersalin!</span>
             ) : (
               <span>Klik kode untuk menyalin 📋</span>
             )}
           </span>
 
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-[11px] text-amber-300 border border-amber-500/30 font-mono">
-            <span>⏱️</span>
-            <span>Kedaluwarsa: {formatTime(timeLeft)}</span>
+          <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] text-slate-600 font-mono">
+            <span>⏱️ Kedaluwarsa dalam: {formatTime(timeLeft)}</span>
           </div>
         </div>
 
         {/* Step-by-Step Desktop Guide */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-left text-xs text-slate-300 space-y-2">
-          <div className="font-bold text-white flex items-center gap-2">
-            <span>💻</span> Langkah Autofill di Komputer / Desktop:
+        <div className="bg-slate-50 rounded-xl p-4 text-left text-xs border border-slate-200/80 space-y-2">
+          <div className="font-semibold text-slate-800 flex items-center gap-2">
+            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Cara Penggunaan di Browser Komputer (Chrome Desktop):
           </div>
-          <ol className="list-decimal list-inside space-y-1.5 text-slate-400 text-[11px]">
+          <ol className="list-decimal list-inside space-y-1 text-slate-600 text-[11px] leading-relaxed">
             <li>Buka halaman formulir web tujuan di browser Chrome laptop/PC Anda.</li>
-            <li>Klik ikon ekstensi <strong className="text-slate-200">Nobif4k Autofill</strong>.</li>
-            <li>Ketik kode <strong className="text-cyan-400 font-mono">{sessionCode}</strong> lalu klik <strong>Fetch Session</strong>.</li>
-            <li>Klik <strong className="text-emerald-400">Direct Autofill</strong> — seluruh isian formulir otomatis terisi seketika!</li>
+            <li>Klik ikon ekstensi <strong>Nobif4k Autofill</strong> di toolbar atas.</li>
+            <li>Masukkan kode <strong>{sessionCode}</strong> lalu klik <strong>Fetch Session</strong>.</li>
+            <li>Klik <strong>Direct Autofill</strong> — seluruh isian formulir otomatis terisi lengkap!</li>
           </ol>
         </div>
 
         {/* JSON Preview */}
         <div className="text-left space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Preview Payload JSON ({Object.keys(data).length} fields)
+            <span className="text-xs font-semibold text-slate-700">
+              Payload Data ({Object.keys(data).length} Field)
             </span>
             <button
               type="button"
               onClick={handleCopyJson}
-              className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
             >
               {copiedJson ? "✓ JSON Tersalin" : "Salin JSON"}
             </button>
           </div>
-          <pre className="bg-slate-950 text-emerald-400 p-3.5 rounded-xl border border-slate-800 text-[11px] font-mono overflow-x-auto max-h-40 scrollbar-thin">
+          <pre className="bg-white text-slate-800 p-3 rounded-lg border border-slate-200 text-[11px] font-mono overflow-x-auto max-h-36">
             {jsonString}
           </pre>
         </div>
@@ -131,16 +119,28 @@ export default function StepSessionSync({
           <button
             type="button"
             onClick={handleCopyJson}
-            className="flex-1 py-3 px-4 bg-slate-700/80 hover:bg-slate-700 font-semibold text-xs text-white rounded-xl transition border border-slate-600"
+            className="flex-1 py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-lg border border-slate-300 shadow-xs transition"
           >
-            {copiedJson ? "✓ JSON Tersalin" : "📋 Salin Raw JSON"}
+            {copiedJson ? "✓ Format JSON Tersalin" : "Salin Format JSON"}
           </button>
+
+          {targetUrl && (
+            <a
+              href={targetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+            >
+              Buka Form Target ↗
+            </a>
+          )}
+
           <button
             type="button"
             onClick={onReset}
-            className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl transition shadow-lg shadow-blue-900/30"
+            className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition"
           >
-            📸 Scan Dokumen Lain
+            Pindai Dokumen Lain
           </button>
         </div>
       </div>

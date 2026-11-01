@@ -2,17 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { parseDocument, ApiError, PRODUCTION_API } from "../services/api";
 
 const MODE_LABELS = {
-  TOHODO: "Tohodo (Google Forms)",
-  QUICKFORM: "QuickForm (Standard Form)",
-  LIGHTNING: "Lightning (React / SPA)",
-  DIRECT: "Direct Autofill",
+  TOHODO: "Google Forms",
+  QUICKFORM: "Standard Form",
+  LIGHTNING: "React / Modern SPA",
+  DIRECT: "Universal Autofill",
 };
 
 const PROGRESS_STAGES = [
-  { percent: 20, title: "Mengompresi Gambar", desc: "Menyesuaikan resolusi optimal untuk AI OCR" },
-  { percent: 45, title: "Memvalidasi RAM Store", desc: "Memproses base64 aman tanpa disk logging (Zero Disk Rule)" },
-  { percent: 75, title: "Menjalankan AI Vision OCR", desc: "Membaca teks NIK, Nama, Alamat & Tanggal Lahir" },
-  { percent: 92, title: "Menghasilkan Sync Code", desc: "Membuat kode 4-digit untuk autofill desktop" },
+  { percent: 25, title: "Menyiapkan Dokumen", desc: "Mengoptimalkan resolusi gambar untuk pemindaian teks" },
+  { percent: 55, title: "Membaca Teks Dokumen", desc: "Mendeteksi apakah kartu identitas atau dokumen teks/paragraf" },
+  { percent: 85, title: "Mengekstrak Struktur & Paragraf", desc: "Menyusun field data dan seluruh isi paragraf lengkap" },
+  { percent: 98, title: "Menyiapkan Autofill", desc: "Membuat data siap pakai untuk formulir" },
 ];
 
 export default function StepCameraCapture({
@@ -34,27 +34,26 @@ export default function StepCameraCapture({
   const fileGalleryRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Progressive progress bar animation while processing
   useEffect(() => {
     let timer;
     if (loading) {
-      setProgress(15);
+      setProgress(20);
       setCurrentStageIdx(0);
 
       const t1 = setTimeout(() => {
-        setProgress(40);
+        setProgress(50);
         setCurrentStageIdx(1);
       }, 1000);
 
       const t2 = setTimeout(() => {
-        setProgress(70);
+        setProgress(80);
         setCurrentStageIdx(2);
       }, 2500);
 
       const t3 = setTimeout(() => {
-        setProgress(88);
+        setProgress(95);
         setCurrentStageIdx(3);
-      }, 4800);
+      }, 4500);
 
       timer = { t1, t2, t3 };
     } else {
@@ -98,7 +97,7 @@ export default function StepCameraCapture({
           const compressed = canvas.toDataURL("image/jpeg", 0.85);
           resolve(compressed);
         };
-        img.onerror = () => reject(new Error("Gagal membaca gambar"));
+        img.onerror = () => reject(new Error("Gagal membaca file gambar"));
         img.src = e.target.result;
       };
       reader.onerror = () => reject(new Error("Gagal membuka file"));
@@ -138,10 +137,10 @@ export default function StepCameraCapture({
           engine: result.engine,
           model: result.model,
         });
-      }, 500);
+      }, 400);
     } catch (err) {
       if (err.name === "AbortError") {
-        setError("Pemrosesan dibatalkan oleh pengguna.");
+        setError("Pemrosesan dibatalkan.");
       } else {
         setError(err instanceof ApiError ? err.message : "Gagal memproses gambar dokumen.");
       }
@@ -159,44 +158,28 @@ export default function StepCameraCapture({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Step Card */}
-      <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-6 border border-slate-700/70 shadow-xl">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-              <h2 className="text-xl font-bold tracking-tight text-white">Capture Dokumen / KTP</h2>
+    <div className="space-y-5">
+      <div className="winui-card rounded-xl p-6">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-semibold flex items-center justify-center">
+              2
+            </span>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Pindai Dokumen / Kartu Identitas</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Dukungan cerdas: Jika terdeteksi dokumen teks/surat maka seluruh paragraf akan dipindai lengkap; jika kartu identitas maka field nama/NIK akan diekstrak.
+              </p>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Ambil foto KTP, Kartu Pasien, Formulir, atau Resep dengan posisi tegak dan jelas.
-            </p>
           </div>
           <button
             onClick={onBack}
             disabled={loading}
-            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition disabled:opacity-50"
+            className="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition font-medium disabled:opacity-50"
           >
             ← Kembali
           </button>
         </div>
-
-        {/* Recommended Mode Tag */}
-        {recommendedMode && (
-          <div className="mb-5 p-3.5 bg-slate-900/80 rounded-xl border border-slate-700 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-              <div className="text-xs font-semibold text-slate-300">
-                Mode Autofill Target: <span className="text-cyan-400 font-bold">{MODE_LABELS[recommendedMode] || recommendedMode}</span>
-              </div>
-            </div>
-            {detectedFields.length > 0 && (
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                {detectedFields.length} target fields
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Hidden File Inputs */}
         <input
@@ -219,105 +202,85 @@ export default function StepCameraCapture({
 
         {/* Viewfinder Area */}
         {!preview ? (
-          <div className="relative group border-2 border-dashed border-slate-600 hover:border-blue-500 rounded-2xl p-6 sm:p-10 transition-all bg-gradient-to-b from-slate-900/60 to-slate-900/30 text-center">
-            {/* Illuminated Corner Brackets */}
-            <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-cyan-400/70 rounded-tl"></div>
-            <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-cyan-400/70 rounded-tr"></div>
-            <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-cyan-400/70 rounded-bl"></div>
-            <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-cyan-400/70 rounded-br"></div>
-
-            <div className="max-w-xs mx-auto py-4">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-3xl animate-radar">
-                📸
+          <div className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-8 sm:p-12 transition-all bg-slate-50/60 text-center relative group">
+            <div className="max-w-sm mx-auto">
+              <div className="w-14 h-14 mx-auto mb-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
-              <h3 className="text-base font-bold text-white mb-1">Pilih Sumber Foto Dokumen</h3>
-              <p className="text-xs text-slate-400 mb-6">
-                Mendukung KTP fisik, kartu identitas, paspor, atau formulir cetak.
+
+              <h3 className="text-sm font-semibold text-slate-800 mb-1">Ambil Foto Dokumen atau Kartu</h3>
+              <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+                Posisikan dokumen atau surat di tempat terang dan tegak lurus agar seluruh teks terbaca jelas.
               </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => fileCameraRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold text-xs transition shadow-lg shadow-blue-900/30 active:scale-95"
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs shadow-xs transition active:scale-98"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  Ambil Kamera
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  </svg>
+                  Buka Kamera
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileGalleryRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-2 px-4 py-3.5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl font-semibold text-xs transition border border-slate-600 active:scale-95"
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg font-medium text-xs shadow-xs transition active:scale-98"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  Unggah Galeri
+                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Pilih Galeri/File
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          /* Preview + Scanner Animation Area */
+          /* Preview and Clean Progress Area */
           <div className="space-y-4">
-            <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-black/60 shadow-2xl">
-              {/* Photo Image */}
+            <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-sm">
               <img
                 src={preview}
-                alt="Captured Document"
-                className={`w-full max-h-[380px] object-contain mx-auto transition-opacity duration-300 ${loading ? "opacity-75 filter contrast-105" : "opacity-100"}`}
+                alt="Foto Dokumen"
+                className={`w-full max-h-[380px] object-contain mx-auto transition-opacity duration-200 ${
+                  loading ? "opacity-75" : "opacity-100"
+                }`}
               />
-
-              {/* Laser Scanning Beam Animation (Active during loading) */}
-              {loading && (
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {/* Cyan Glowing Laser Bar */}
-                  <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee] animate-laser z-20"></div>
-
-                  {/* Laser glow trail */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 via-transparent to-blue-500/10 z-10"></div>
-
-                  {/* Target Finder HUD Overlay */}
-                  <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-cyan-400 z-20"></div>
-                  <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-cyan-400 z-20"></div>
-                  <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-cyan-400 z-20"></div>
-                  <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-cyan-400 z-20"></div>
-
-                  {/* Live HUD watermark */}
-                  <div className="absolute top-4 left-12 text-[10px] font-mono text-cyan-400 bg-slate-900/80 px-2 py-0.5 rounded border border-cyan-500/30 z-20 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                    AI OCR SCANNING...
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Live Progress Card when Loading */}
+            {/* WinUI Fluent Progress Bar */}
             {loading && (
-              <div className="bg-slate-900/90 rounded-xl p-4 border border-blue-500/30 space-y-3 shadow-lg">
+              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-blue-400 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
-                    {PROGRESS_STAGES[currentStageIdx]?.title || "Menganalisis Dokumen..."}
-                  </span>
-                  <span className="font-mono font-bold text-white">{progress}%</span>
+                  <div className="flex items-center gap-2 font-medium text-slate-800">
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-blue-600/30 border-t-blue-600 rounded-full"></div>
+                    <span>{PROGRESS_STAGES[currentStageIdx]?.title || "Memproses Dokumen..."}</span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">{progress}%</span>
                 </div>
 
-                {/* Animated Progress Bar */}
-                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden p-0.5">
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-500 ease-out"
+                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-[11px] text-slate-400 italic">
-                    {PROGRESS_STAGES[currentStageIdx]?.desc}
-                  </p>
+                <p className="text-[11px] text-slate-500">
+                  {PROGRESS_STAGES[currentStageIdx]?.desc}
+                </p>
+
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="text-[11px] text-red-400 hover:text-red-300 font-semibold underline px-2 py-0.5"
+                    className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition"
                   >
                     Batal
                   </button>
@@ -325,80 +288,48 @@ export default function StepCameraCapture({
               </div>
             )}
 
-            {/* Actions when not loading */}
             {!loading && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 justify-center pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setPreview(null);
-                    if (fileCameraRef.current) fileCameraRef.current.value = "";
-                    if (fileGalleryRef.current) fileGalleryRef.current.value = "";
-                  }}
-                  className="flex-1 py-3 px-4 bg-slate-700/80 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition border border-slate-600 flex items-center justify-center gap-2"
+                  onClick={() => fileCameraRef.current?.click()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-xs transition"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  Foto Ulang (Retake Photo)
+                  Ambil Foto Ulang
                 </button>
                 <button
                   type="button"
                   onClick={() => fileGalleryRef.current?.click()}
-                  className="py-3 px-4 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-semibold transition"
+                  className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-medium rounded-lg shadow-xs transition"
                 >
-                  Pilih Lain
+                  Pilih Gambar Lain
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Error Alert Box */}
+        {/* Error Notification */}
         {error && (
-          <div className="mt-5 bg-red-950/40 border border-red-500/40 rounded-xl p-4 text-xs text-red-200 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <span className="text-base text-red-400">⚠️</span>
-              <div className="flex-1">
-                <div className="font-bold text-red-300">Terjadi Kendala Pemindaian</div>
-                <div className="mt-0.5 text-slate-300">{error}</div>
-              </div>
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 space-y-2">
+            <div className="flex items-start gap-2">
+              <span>⚠️</span>
+              <div className="flex-1 font-medium">{error}</div>
             </div>
-
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-red-900/40">
+            <div className="flex gap-2 pt-1 border-t border-red-100">
               <button
                 type="button"
                 onClick={() => {
                   setError(null);
-                  if (fileCameraRef.current) fileCameraRef.current.value = "";
                   setPreview(null);
                 }}
-                className="px-3 py-1.5 bg-red-800/50 hover:bg-red-800 text-white rounded-lg text-[11px] font-semibold transition"
+                className="px-2.5 py-1 bg-white hover:bg-red-50 text-red-700 border border-red-200 rounded text-[11px] font-medium"
               >
                 Coba Lagi
               </button>
-
-              {onResetApiUrl && (
-                <button
-                  type="button"
-                  onClick={onResetApiUrl}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-semibold transition border border-slate-700"
-                >
-                  Reset URL ke Production ({PRODUCTION_API})
-                </button>
-              )}
             </div>
           </div>
         )}
-      </div>
-
-      {/* Security Info Card */}
-      <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 text-xs text-slate-400 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="text-emerald-400 text-sm">🔒</span>
-          <span>Zero Disk Storage Rule: Gambar diproses langsung di RAM dan tidak disimpan ke server.</span>
-        </div>
-        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
-          SECURE
-        </span>
       </div>
     </div>
   );
