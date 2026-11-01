@@ -121,7 +121,7 @@ export default function StepReviewEditor({
           <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-300 flex items-center justify-between gap-2 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-base">✨</span>
-              <span><strong>Google Gemini 2.5 Flash:</strong> AI Vision membaca data fisik dari foto asli dokumen Anda.</span>
+              <span><strong>Google Gemini AI Vision ({ocrModel || "flash"}):</strong> AI Vision berhasil membaca data fisik dari foto asli dokumen Anda.</span>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 whitespace-nowrap">
               LIVE AI OCR
